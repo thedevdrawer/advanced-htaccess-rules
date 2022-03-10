@@ -1,0 +1,175 @@
+# Set timezone
+SetEnv TZ America/Chicago
+
+# Change Server signature
+##---------------------------------------
+ServerSignature EMail
+SetEnv SERVER_ADMIN sample@example.com
+#OR
+ServerSignature Off
+##---------------------------------------
+
+# Error Pages
+ErrorDocument 401 /errors/401.html
+ErrorDocument 404 /errors/404.html
+ErrorDocument 500 /errors/500.html
+
+## Error Page types
+#400 - Bad Request
+#401 - Authorization Required
+#403 - Forbidden
+#404 - Not Found
+#500 - Internal Server Error
+#503 - Service Unavailable
+#504 - Gateway Timeout
+
+# Redirects
+## Simple Redirects
+Redirect 301 /sample/ http://htaccess.local/sample2/
+Redirect 301 /old-page.html http://htaccess.local/new-page.html
+Redirect 301 /landing.html https://thedevdrawer.com
+
+## WWW to Non-WWW
+Options +FollowSymlinks
+RewriteEngine on
+RewriteCond % ^www.htaccess.local [NC]
+RewriteRule ^(.*)$ http://htacess.local/$1 [R=301,NC]
+
+## Non-WWW to WWW
+Options +FollowSymlinks
+RewriteEngine on
+RewriteCond % ^htaccess.local [NC]
+RewriteRule ^(.*)$ http://www.htacess.local/$1 [R=301,NC]
+
+# Blacklisting
+## Deny IP, allow all
+order allow,deny
+deny from 192.168.0.1
+deny from 192.168
+allow from all
+
+## Allow IP, deny all
+order deny,allow
+deny from all
+allow from 192.168
+
+## Deny from domain, allow all
+order allow,deny
+deny from google.com
+allow from all
+
+# Blocking
+## Block via Referrer
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} google\.com [NC,OR]
+RewriteCond %{HTTP_REFERER} facebook\.com [NC,OR]
+RewriteCond %{HTTP_REFERER} microsoft\.com [NC]
+RewriteRule (.*) - [F]
+
+## Block via User Agent
+RewriteEngine on
+RewriteCond %{HTTP_USER_AGENT} (Botname|Botname2|Botname3) [NC]
+RewriteRule (.*) - [F,L]
+
+## Block via Query String
+## http://htaccess.local/bot-crawl/request/?scan=123
+RewriteEngine on
+RewriteCond %{QUERY_STRING} (crawl|scan) [NC]
+RewriteRule (.*) - [F,L]
+
+## Block via Request URI
+RedirectMatch 403 /bot-crawl/
+
+# Default Directory Page
+DirectoryIndex index.html home.html
+
+# Block specific files
+<Files secret.html>
+order allow,deny
+deny from all
+</Files>
+
+# Force download of files
+AddType application/octet-stream pdf txt docx docx
+
+# Block hotlinking
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http://(www\.)htaccess.local/.*$ [NC]
+RewriteRule \.(png|gif|jpg|jpeg|mp3|xml)$ - [F]
+
+## Replace hotlinked images with another image
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http://(www\.)htaccess.local/.*$ [NC]
+RewriteRule \.(jpeg)$ http://htaccess.local/bad.png [R,L]
+
+# Speed Optimizations
+## Expires by type
+<IfModule mod_expires.c>
+    ## Enable expiration control
+    ExpiresActive on
+
+    ## CSS and JS expiration: 1 week after request
+    ExpiresByType text/css "now plus 1 week"
+    ExpiresByType application/javascript "now plus 1 week"
+    ExpiresByType application/x-javascript "now plus 1 week"
+
+    ## Image file expiration: 1 month after request
+    ExpiresByType image/gif "now plus 1 month"
+    ExpiresByType image/jpeg "now plus 1 month"
+    ExpiresByType image/jpg "now plus 1 month"
+    ExpiresByType image/png "now plus 1 month"
+    ExpiresByType image/ico "now plus 1 month"
+    ExpiresByType text/ico "now plus 1 month"
+    ExpiresByType application/ico "now plus 1 month"
+    ExpiresByType image/svg+xml "now plus 1 month"
+
+    ## Font files expiration: 1 week after request
+    ExpiresByType application/x-font-ttf "now plus 1 week"
+    ExpiresByType application/x-font-opentype "now plus 1 week"
+    ExpiresByType application/x-font-woff "now plus 1 week"
+    ExpiresByType font/woff "now plus 1 week"
+    ExpiresByType image/svg+xml "now plus 1 week"
+
+    ## Audio file expiration: 1 month after request
+    ExpiresByType audio/mp3 "now plus 1 month"
+
+    ## Movies files expiration: 1 month after request
+    ExpiresByType video/mp4 "now plus 1 month"
+</IfModule>
+
+## Cache-Control
+## You need to enable mod_headers for this to work
+<IfModule mod_headers.c>
+    <filesmatch ".(css|jpg|jpeg|png|gif|js|ico)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </filesmatch>
+</IfModule>
+##---------------------------------------
+## Gzip
+<IfModule mod_gzip.c>
+    mod_gzip_on Yes
+    mod_gzip_dechunk Yes
+    mod_gzip_item_include file .(html?|txt|css|js|php)$
+    mod_gzip_item_include handler ^cgi-script$
+    mod_gzip_item_include mime ^text/.*
+    mod_gzip_item_include mime ^application/x-javascript.*
+    mod_gzip_item_exclude mime ^image/.*
+    mod_gzip_item_exclude repheader ^Content-Encoding:.*gzip.*
+</IfModule>
+
+##OR
+<IfModule mod_headers.c>
+    <filesmatch ".(css|jpg|jpeg|png|gif|js|ico)">
+        SetOutputFilter DEFLATE
+    </filesmatch>
+</IfModule>
+##---------------------------------------
+
+## Set header Vary: Accept-Encoding
+<IfModule mod_headers.c>
+    <filesmatch ".(js|css|xml|gz|html)$">
+        Header append Vary: Accept-Encoding
+    </filesmatch>
+</IfModule>
